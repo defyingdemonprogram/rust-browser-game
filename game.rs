@@ -24,41 +24,57 @@ impl Pixel {
     }
 }
 
-const _RED: Pixel   = Pixel::rgba(0xFF, 0, 0, 0xFF);
-const _GREEN: Pixel = Pixel::rgba(0, 0xFF, 0, 0xFF);
-const _BLUE: Pixel  = Pixel::rgba(0, 0, 0xFF, 0xFF);
-
-#[derive(Copy, Clone)]
-struct RGBA {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32,
-}
-
-impl RGBA {
-    fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-        Self { r, g, b, a }
-    }
-
-    fn to_pixel(self) -> Pixel {
-        Pixel::rgba(
-            (self.r * 255.0) as u8,
-            (self.g * 255.0) as u8,
-            (self.b * 255.0) as u8,
-            (self.a * 255.0) as u8)
-    }
-}
+const RED: Pixel   = Pixel::rgba(0xFF, 0, 0, 0xFF);
+const GREEN: Pixel = Pixel::rgba(0, 0xFF, 0, 0xFF);
+const BLUE: Pixel  = Pixel::rgba(0, 0, 0xFF, 0xFF);
+const BACKGROUND: Pixel = Pixel::rgba(18, 18, 18, 0xFF);
 
 pub struct Display {
-    pixels: [[Pixel; WIDTH]; HEIGHT],
+    pixels: [Pixel; WIDTH * HEIGHT],
+}
+
+const fn max(x: i32, y: i32) -> i32 {
+    if x > y {
+        x
+    } else {
+        y
+    }
+}
+
+const fn min(x: i32, y: i32) -> i32 {
+    if x < y {
+        x
+    } else {
+        y
+    }
+}
+
+const fn clamp(x: i32, low: i32, high: i32) -> i32 {
+    min(max(low, x), high)
 }
 
 impl Display {
-    fn _fill(&mut self, pixel: Pixel) {
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                self.pixels[y][x] = pixel;
+    fn fill(&mut self, pixel: Pixel) {
+        unsafe {
+            for y in 0..HEIGHT {
+                for x in 0..WIDTH {
+                    *self.pixels.get_unchecked_mut(y * WIDTH + x) = pixel;
+                }
+            }
+        }
+    }
+
+    fn fill_rect(&mut self, x0: i32, y0: i32, w: i32, h: i32, pixel: Pixel) {
+        let x1 = clamp(x0,         0, (WIDTH - 1)  as i32) as usize;
+        let x2 = clamp(x0 + w - 1, 0, (WIDTH - 1)  as i32) as usize;
+        let y1 = clamp(y0,         0, (HEIGHT - 1) as i32) as usize;
+        let y2 = clamp(y0 + h - 1, 0, (HEIGHT - 1) as i32) as usize;
+
+        unsafe {
+            for y in y1..=y2 {
+                for x in x1..=x2 {
+                    *self.pixels.get_unchecked_mut(y * WIDTH + x) = pixel;
+                }
             }
         }
     }
@@ -67,21 +83,50 @@ impl Display {
 type Seconds = f32;
 
 static mut DISPLAY: Display = Display {
-    pixels: [[Pixel(0); WIDTH]; HEIGHT],
+    pixels: [Pixel(0); WIDTH * HEIGHT],
 };
 
 pub struct State {
     time: Seconds,
+    x: i32,
+    y: i32,
+    dx: i32,
+    dy: i32,
 }
+
+const RECT_WIDTH: i32 = 100;
+const RECT_HEIGHT: i32 = 100;
 
 impl State {
     fn update(&mut self, dt: Seconds) {
         self.time += dt;
+
+        const SPEED: i32 = 16;
+
+        if self.x < 0 || self.x + RECT_WIDTH > WIDTH as i32 {
+            self.dx = -self.dx;
+        }
+
+        if self.y < 0 || self.y + RECT_HEIGHT > HEIGHT as i32 {
+            self.dy = -self.dy;
+        }
+
+        self.x += self.dx * SPEED;
+        self.y += self.dy * SPEED;
+    }
+
+    fn render(&self, display: &mut Display) {
+        display.fill(BACKGROUND);
+        display.fill_rect(self.x, self.y, RECT_WIDTH, RECT_HEIGHT, RED);
     }
 }
 
 static mut STATE: State = State {
     time: 0.0,
+    x: 10,
+    y: 10,
+    dx: 1,
+    dy: 1,
 };
 
 #[no_mangle]
@@ -95,28 +140,15 @@ pub fn get_display_height() -> usize {
 }
 
 #[no_mangle]
-pub fn get_display() -> *mut Display {
-    &raw mut DISPLAY
+pub unsafe fn get_display() -> &'static mut Display {
+    &mut DISPLAY
 }
 
 
 #[no_mangle]
-pub fn next_frame(dt: Seconds) {
-    unsafe {
-        STATE.update(dt);
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                let ix = x as f32 / WIDTH as f32;
-                let iy = y as f32 / HEIGHT as f32;
-                DISPLAY.pixels[y][x] =
-                    RGBA::new(
-                        (js_sin(STATE.time + ix) + 1.0) * 0.5,
-                        (js_cos(STATE.time + iy) + 1.0) * 0.5,
-                        (js_cos(STATE.time + iy + ix) + 1.0) * 0.5,
-                        1.0).to_pixel();
-            }
-        }
-    }
+pub unsafe fn next_frame(dt: Seconds) {
+    STATE.update(dt);
+    STATE.render(&mut DISPLAY);
 }
 
 #[no_mangle]
