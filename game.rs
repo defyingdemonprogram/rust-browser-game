@@ -86,47 +86,108 @@ static mut DISPLAY: Display = Display {
     pixels: [Pixel(0); WIDTH * HEIGHT],
 };
 
-pub struct State {
-    time: Seconds,
+struct Player {
     x: i32,
     y: i32,
-    dx: i32,
-    dy: i32,
 }
 
-const RECT_WIDTH: i32 = 100;
-const RECT_HEIGHT: i32 = 100;
+const PLAYER_SIZE: i32 = 100;
+const PLAYER_COLOR: Pixel = RED;
+const PLAYER_SPEED: i32 = 16;
+
+impl Player {
+    fn render(&self, display: &mut Display) {
+        display.fill_rect(
+            self.x - PLAYER_SIZE / 2,
+            self.y - PLAYER_SIZE / 2,
+            PLAYER_SIZE,
+            PLAYER_SIZE,
+            PLAYER_COLOR);
+    }
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+struct Bullet {
+    x: i32,
+    y: i32,
+    alive: bool,
+}
+
+const BULLET_SIZE: i32 = 50;
+const BULLET_SPEED: i32 = 20;
+const BULLET_COLOR: Pixel = GREEN;
+
+impl Bullet {
+    const fn dead() -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            alive: false,
+        }
+    }
+
+    fn render(&self, display: &mut Display) {
+        if self.alive {
+            display.fill_rect(
+                self.x - BULLET_SIZE / 2,
+                self.y - BULLET_SIZE / 2,
+                BULLET_SIZE,
+                BULLET_SIZE,
+                BULLET_COLOR);
+        }
+    }
+}
+
+const BULLETS_CAPACITY: usize = 5;
+
+pub struct State {
+    time: Seconds,
+    player: Player,
+    bullets: [Bullet; BULLETS_CAPACITY],
+}
 
 impl State {
     fn update(&mut self, dt: Seconds) {
         self.time += dt;
-
-        const SPEED: i32 = 16;
-
-        if self.x < 0 || self.x + RECT_WIDTH > WIDTH as i32 {
-            self.dx = -self.dx;
+        for bullet in self.bullets.iter_mut() {
+            if bullet.alive {
+                bullet.y -= BULLET_SPEED;
+                if bullet.y < 0 {
+                    bullet.alive = false
+                }
+            }
         }
-
-        if self.y < 0 || self.y + RECT_HEIGHT > HEIGHT as i32 {
-            self.dy = -self.dy;
-        }
-
-        self.x += self.dx * SPEED;
-        self.y += self.dy * SPEED;
     }
 
     fn render(&self, display: &mut Display) {
         display.fill(BACKGROUND);
-        display.fill_rect(self.x, self.y, RECT_WIDTH, RECT_HEIGHT, RED);
+        self.player.render(display);
+        for bullet in self.bullets.iter() {
+            bullet.render(display)
+        }
+        // display.fill_rect(self.x, self.y, RECT_WIDTH, RECT_HEIGHT, RED);
+    }
+    fn mouse_move(&mut self, x: i32, _y: i32) {
+        self.player.x = x;
+    }
+
+    fn mouse_click(&mut self) {
+        for bullet in self.bullets.iter_mut() {
+            if !bullet.alive {
+                bullet.alive = true;
+                bullet.x = self.player.x;
+                bullet.y = self.player.y - PLAYER_SIZE / 2 - BULLET_SIZE / 2;
+                break;
+            }
+        }
     }
 }
 
 static mut STATE: State = State {
     time: 0.0,
-    x: 10,
-    y: 10,
-    dx: 1,
-    dy: 1,
+    player: Player{ x: 0, y: HEIGHT as i32 - PLAYER_SIZE },
+    bullets: [Bullet::dead(); BULLETS_CAPACITY],
 };
 
 #[no_mangle]
@@ -144,7 +205,6 @@ pub unsafe fn get_display() -> &'static mut Display {
     &mut DISPLAY
 }
 
-
 #[no_mangle]
 pub unsafe fn next_frame(dt: Seconds) {
     STATE.update(dt);
@@ -152,11 +212,13 @@ pub unsafe fn next_frame(dt: Seconds) {
 }
 
 #[no_mangle]
-pub fn move_right() {
+pub unsafe fn mouse_move(x: i32, y: i32) {
+    STATE.mouse_move(x, y);
 }
 
 #[no_mangle]
-pub fn move_left() {
+pub unsafe fn mouse_click() {
+    STATE.mouse_click();
 }
 
 #[allow(dead_code)]
