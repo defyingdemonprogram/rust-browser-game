@@ -18,6 +18,11 @@ It is assumed that you are using [rustup](https://rustup.rs/) for managing your 
 
 Open address http://127.0.0.1:6969 in browser
 
+### Game Controls
+- **Mouse Click**: Shoot enemies  
+- **Spacebar**: Pause the game during play or restart after a game over  
+- **Mouse Movement**: Move the player by moving the cursor  
+
 ### 🔗 References
 
 - [WebAssembly Official Site](https://webassembly.org/) – Learn more about WebAssembly, its features, and use cases.  

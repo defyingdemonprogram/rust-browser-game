@@ -20,7 +20,7 @@ async function start() {
     document.addEventListener('keydown', e => {
         console.log(e);
         if (e.code === 'Space') {
-            game.instance.exports.toggle_pause();
+            game.instance.exports.toggle_pause_or_reset();
         }
     });
     gameCanvas.addEventListener("mousemove", e => {
