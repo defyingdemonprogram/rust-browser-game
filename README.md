@@ -1,6 +1,6 @@
-## Browser Game in RUST
+## Browser Game in 🦀 RUST
 
-## Quick Start
+## ⚡Quick Start
 It is assumed that you are using [rustup](https://rustup.rs/) for managing your local Rust installation
 
 1. Make sure you have `wasm32-unknown-unknown` target installed:
@@ -18,10 +18,15 @@ It is assumed that you are using [rustup](https://rustup.rs/) for managing your 
 
 Open address http://127.0.0.1:6969 in browser
 
-### Game Controls
-- **Mouse Click**: Shoot enemies  
-- **Spacebar**: Pause the game during play or restart after a game over  
-- **Mouse Movement**: Move the player by moving the cursor  
+### 🎯 Game Controls
+- **🖱️ Mouse Click**: Shoot enemies 💥
+- **␣ Spacebar**: ⏸️ Pause the game during play or 🔄 restart after a game over  
+- **🖱️ Mouse Movement**: Move the player by 🚶‍♂️ moving the cursor  
+
+### 🎥 Demo
+[rust-game-demo.webm](https://github.com/user-attachments/assets/f27fb21c-72a9-425c-ac87-67a126f564fe)
+
+> Want to see it in action? Clone the repo and try it yourself! 💥
 
 ### 🔗 References
 
