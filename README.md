@@ -9,7 +9,7 @@ It is assumed that you are using [rustup](https://rustup.rs/) for managing your 
     ```
 2. Build the game
     ```bash
-    make
+    make -B
     ```
 3.  Play the game
     ```bash

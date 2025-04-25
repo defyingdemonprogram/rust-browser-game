@@ -54,6 +54,23 @@ pub fn get_display() -> *mut Display {
 - `#[no_mangle]`: Prevents the compiler from renaming the function, allowing it to be accessible from other languages or systems (e.g., via WASM).
 - Returns a mutable pointer to the `display` struct, likely so an external renderer or system can access and manipulate the display buffer.
 
+### 🚀 Compiling a Rust Program to WebAssembly
+
+```bash
+rustc -C opt-level=3 --target wasm32-unknown-unknown game.rs
+```
+
+- 🦀 `rustc`: Runs the Rust compiler.
+
+- ⚙️ `-C opt-level=3`: Applies **optimization level 3** — the highest level for faster, smaller code (great for release builds).
+
+- 🌐 `--target wasm32-unknown-unknown`: Sets the target to WebAssembly:
+  - 🧱 `wasm32`: 32-bit WebAssembly architecture.
+  - ❓`unknown-unknown`: No OS, no ABI — a barebones, portable WASM target.
+
+- 📄 `game.rs`: Your Rust source file to compile.
+
+
 ### 🔗 External Function Declaration
 
 ```rust
